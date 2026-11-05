@@ -1,0 +1,162 @@
+HTML
+
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080909">
+<title>Favorite Bars | Classic Flip V6</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#080909;color:#e6c58a;font-family:Arial,sans-serif}
+#stage{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.board{width:1160px;flex:none;transform-origin:center center;background:#151816;border:9px solid #292c29;box-shadow:inset 0 0 22px #000,0 10px 40px #000;border-radius:5px;padding:17px 12px 12px;user-select:none}
+.grid{display:grid;grid-template-columns:2.5fr 1.85fr .9fr 1.65fr .44fr;gap:7px}
+.head{margin:0 0 12px;padding:4px 0 8px;color:#a69a7d;font-size:14px;letter-spacing:2px}
+.head>div{padding-left:4px}
+.row{margin-bottom:10px}
+.field{display:flex;gap:2px;min-width:0;overflow:hidden;transform-origin:center center;backface-visibility:hidden}
+.tile{position:relative;flex:1;min-width:0;height:78px;background:linear-gradient(#2c2e2b 0%,#232522 48%,#111310 50%,#20221f 53%,#1b1d1a 100%);border:1px solid #343831;border-radius:3px;perspective:180px;box-shadow:inset 0 2px 3px #ffffff0a,inset 0 -3px 5px #0008}
+.tile::after{content:'';position:absolute;top:50%;left:0;right:0;height:2px;background:#050605;z-index:5;box-shadow:0 1px #6a6a6044;pointer-events:none}
+.glyph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#edcc8e;font:700 29px/1 'Courier New',monospace;text-shadow:0 0 3px #8d6a3d44;backface-visibility:hidden}
+.field.flip{animation:classicFlip 500ms ease-in-out both;animation-delay:var(--delay,0ms)}
+@keyframes classicFlip{
+0%{transform:rotateX(0)}
+40%{transform:rotateX(-70deg);filter:brightness(.5)}
+100%{transform:rotateX(0);filter:brightness(1)}
+}
+.field.icon .glyph{font-family:Arial,sans-serif;font-size:28px}
+#tap{position:absolute;inset:0;cursor:pointer;z-index:10}
+@media(prefers-reduced-motion:reduce){.field.flip{animation-duration:1ms;animation-delay:0ms}}
+</style>
+</head>
+<body>
+<div id="stage">
+<div class="board" id="board">
+<div class="grid head">
+<div>BAR NAME</div><div>LOCATION</div><div>LOCAL TIME</div><div>WEATHER</div><div>ICON</div>
+</div>
+<div id="rows"></div>
+</div>
+</div>
+<div id="tap" title="Tap to advance to next page"></div>
+<script>
+const bars=[
+['SLOPPY JOE’S','KEY WEST, FL','America/New_York',24.5551,-81.7800],
+['DOWN THE HATCH','LAHAINA, MAUI','Pacific/Honolulu',20.8783,-156.6825],
+['OGA’S CANTINA','ANAHEIM, CA','America/Los_Angeles',33.8121,-117.9190],
+['SANDALS DUNN’S RIVER','OCHO RIOS, JA','America/Jamaica',18.4074,-77.1031],
+['MC P’S','CORONADO, CA','America/Los_Angeles',32.6859,-117.1831],
+['TIKI’S','HONOLULU, HI','Pacific/Honolulu',21.2739,-157.8233],
+['HARD ROCK','LONDON, UK','Europe/London',51.5037,-0.1491],
+['JULES VERNE','PARIS, FR','Europe/Paris',48.8584,2.2945],
+['HARVEY’S WAGON WHEEL','LAKE TAHOE, NV','America/Los_Angeles',38.9611,-119.9400],
+['FRANKIE’S TIKI ROOM','LAS VEGAS, NV','America/Los_Angeles',36.1433,-115.1886],
+['TAMARIND ROOM','POIPU, KAUAI','Pacific/Honolulu',21.8756,-159.4595],
+['NAKED TIKI','ST CHARLES, MO','America/Chicago',38.7881,-90.4974],
+['THE GRASS SKIRT','SAN DIEGO, CA','America/Los_Angeles',32.7989,-117.2400],
+['CAPTAIN’S QUARTERS','SAN DIEGO, CA','America/Los_Angeles',32.7989,-117.2400],
+['RICK’S CAFE','NEGRIL, JA','America/Jamaica',18.2684,-78.3666]
+];
+const items=bars.map(b=>({b,temp:null,condition:'WAITING',icon:'·'}));
+const specs=[22,17,5,16,1],cols=5,perPage=5,count=Math.ceil(items.length/perPage);
+let page=0,timers=[],lastMinute='';
+const root=document.getElementById('rows'),board=document.getElementById('board');
+function clock(tz){
+return new Intl.DateTimeFormat('en-GB',{timeZone:tz,hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date())
+}
+function make(){
+for(let r=0;r<perPage;r++){
+const row=document.createElement('div');row.className='grid row';
+for(let c=0;c<cols;c++){
+const field=document.createElement('div');field.className='field'+(c===4?' icon':'');
+for(let n=0;n<specs[c];n++){
+const tile=document.createElement('div');tile.className='tile';
+const glyph=document.createElement('span');glyph.className='glyph';glyph.textContent=' ';
+tile.append(glyph);field.append(tile)
+}
+row.append(field)
+}
+root.append(row)
+}
+}
+function fields(i){
+const x=items[page*perPage+i];if(!x)return ['','','','',''];
+return [x.b[0],x.b[1],clock(x.b[2]),x.temp===null?x.condition:`${x.temp}°F ${x.condition}`,x.icon]
+}
+function fit(){
+board.style.transform='scale(1)';
+const scale=Math.min((innerWidth-10)/board.offsetWidth,(innerHeight-10)/board.offsetHeight);
+board.style.transform=`scale(${Math.min(1,scale)})`
+}
+function cancel(){
+timers.forEach(clearTimeout);timers=[];
+document.querySelectorAll('.field.flip').forEach(t=>t.classList.remove('flip'))
+}
+function render(animated=false,full=false){
+for(let r=0;r<perPage;r++){
+const values=fields(r);
+for(let c=0;c<cols;c++){
+const field=root.children[r].children[c];
+const chars=String(values[c]).toUpperCase().padEnd(specs[c],' ').slice(0,specs[c]);
+let changed=false;
+for(let n=0;n<specs[c];n++){
+const glyph=field.children[n].firstChild;
+if(glyph.textContent!==chars[n]){glyph.textContent=chars[n];changed=true}
+}
+if(animated&&(full||changed)){
+field.classList.remove('flip');
+field.style.setProperty('--delay',`${r*130+c*65}ms`);
+void field.offsetWidth;
+field.classList.add('flip')
+}
+}
+}
+}
+function next(){
+cancel();page=(page+1)%count;render(true,true)
+}
+function conditions(code){
+if(code===0)return ['CLEAR','☀'];
+if(code<=3)return ['PART CLOUDY','⛅'];
+if(code<=48)return ['FOG','≋'];
+if(code<=67)return ['RAIN','☂'];
+if(code<=77)return ['SNOW','❄'];
+if(code<=82)return ['SHOWERS','☂'];
+if(code<=86)return ['SNOW','❄'];
+return ['STORMS','⚡']
+}
+async function updateWeather(){
+const group=new Map();
+items.forEach((x,i)=>{
+const k=x.b[3]+','+x.b[4];
+if(!group.has(k))group.set(k,[]);
+group.get(k).push(i)
+});
+await Promise.all([...group].map(async ([k,ids])=>{
+try{
+const [lat,lon]=k.split(',');
+const res=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&temperature_unit=fahrenheit&timezone=auto`);
+if(!res.ok)throw Error('weather');
+const j=await res.json();
+const [condition,icon]=conditions(j.current.weather_code);
+ids.forEach(i=>Object.assign(items[i],{temp:Math.round(j.current.temperature_2m),condition,icon}))
+}catch(e){
+ids.forEach(i=>Object.assign(items[i],{temp:null,condition:'UNAVAILABLE',icon:'–'}))
+}
+}));
+render(false,false)
+}
+make();fit();render(false,true);updateWeather();
+window.addEventListener('resize',fit);
+document.getElementById('tap').addEventListener('click',next);
+setInterval(next,20000);
+setInterval(()=>{
+const now=Math.floor(Date.now()/60000);
+if(now!==lastMinute){lastMinute=now;render(false,false)}
+},5000);
+setInterval(updateWeather,15*60000);
+</script>
+</body>
+</html>
