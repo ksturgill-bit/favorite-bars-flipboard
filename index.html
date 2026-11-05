@@ -6,7 +6,12 @@ HTML
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#080909">
-<title>Favorite Bars | Classic Flip V6</title>
+<meta name="application-name" content="Favorite Bars Flipboard">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Favorite Bars Flipboard V8</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon-192.png">
 <style>
 *{box-sizing:border-box}
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#080909;color:#e6c58a;font-family:Arial,sans-serif}
@@ -16,18 +21,36 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#080909;col
 .head{margin:0 0 12px;padding:4px 0 8px;color:#a69a7d;font-size:14px;letter-spacing:2px}
 .head>div{padding-left:4px}
 .row{margin-bottom:10px}
-.field{display:flex;gap:2px;min-width:0;overflow:hidden;transform-origin:center center;backface-visibility:hidden}
-.tile{position:relative;flex:1;min-width:0;height:78px;background:linear-gradient(#2c2e2b 0%,#232522 48%,#111310 50%,#20221f 53%,#1b1d1a 100%);border:1px solid #343831;border-radius:3px;perspective:180px;box-shadow:inset 0 2px 3px #ffffff0a,inset 0 -3px 5px #0008}
-.tile::after{content:'';position:absolute;top:50%;left:0;right:0;height:2px;background:#050605;z-index:5;box-shadow:0 1px #6a6a6044;pointer-events:none}
+.field{display:flex;gap:2px;min-width:0;overflow:hidden;transform-origin:center;backface-visibility:hidden}
+.tile{position:relative;flex:1;min-width:0;height:78px;background:linear-gradient(#2c2e2b 0%,#232522 48%,#111310 50%,#20221f 53%,#1b1d1a 100%);border:1px solid #343831;border-radius:3px;box-shadow:inset 0 2px 3px #ffffff0a,inset 0 -3px 5px #0008}
+.tile:after{content:'';position:absolute;top:50%;left:0;right:0;height:2px;background:#050605;z-index:5;box-shadow:0 1px #6a6a6044}
 .glyph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#edcc8e;font:700 29px/1 'Courier New',monospace;text-shadow:0 0 3px #8d6a3d44;backface-visibility:hidden}
 .field.flip{animation:classicFlip 500ms ease-in-out both;animation-delay:var(--delay,0ms)}
-@keyframes classicFlip{
-0%{transform:rotateX(0)}
-40%{transform:rotateX(-70deg);filter:brightness(.5)}
-100%{transform:rotateX(0);filter:brightness(1)}
-}
+@keyframes classicFlip{0%{transform:rotateX(0)}40%{transform:rotateX(-70deg);filter:brightness(.5)}100%{transform:rotateX(0);filter:brightness(1)}}
 .field.icon .glyph{font-family:Arial,sans-serif;font-size:28px}
 #tap{position:absolute;inset:0;cursor:pointer;z-index:10}
+#settingsBtn{position:fixed;right:12px;top:12px;z-index:25;background:#242720dd;color:#e6c58a;border:1px solid #71644c;border-radius:7px;font-size:22px;width:43px;height:43px;cursor:pointer;opacity:.65}
+#settingsPanel{position:fixed;inset:0;z-index:40;background:#000b;display:none;align-items:center;justify-content:center;padding:12px;color:#e9d8b6}
+#settingsPanel.open{display:flex}
+.settingsBox{width:min(760px,100%);max-height:96vh;overflow:auto;background:#1c211e;border:2px solid #796748;border-radius:10px;padding:18px;box-shadow:0 0 40px #000}
+.settingsBox h2{margin:0 0 12px;font-size:23px}
+.settingsBox h3{margin:14px 0 8px;font-size:17px}
+.settingsBox button,.settingsBox select,.settingsBox input{font:inherit}
+.settingsBox button{background:#363a32;color:#f4d49b;border:1px solid #71644c;border-radius:5px;padding:9px;cursor:pointer}
+.settingsBox button:disabled{opacity:.35}
+.settingsBox input,.settingsBox select{background:#101310;color:#fff;border:1px solid #776e5a;border-radius:5px;padding:8px;min-width:0;width:100%}
+.settingsBox label{display:block;font-size:13px;margin:5px 0}
+.settingLine{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.settingLine>label{flex:1;min-width:150px}
+.settingLine input[type=checkbox]{width:auto}
+.settingsList{display:grid;gap:5px}
+.barEntry{display:flex;align-items:center;gap:6px;background:#262b26;border-radius:5px;padding:6px}
+.barEntry .name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.barEntry button{padding:5px 9px}
+.editGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.small{font-size:12px;color:#c1b499}
+.section{border-top:1px solid #514b3d;padding-top:12px;margin-top:12px}
+#message{min-height:1.3em;color:#e7d18f}
 @media(prefers-reduced-motion:reduce){.field.flip{animation-duration:1ms;animation-delay:0ms}}
 </style>
 </head>
@@ -40,7 +63,61 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#080909;col
 <div id="rows"></div>
 </div>
 </div>
-<div id="tap" title="Tap to advance to next page"></div>
+<div id="tap" title="Tap for next page"></div>
+<button id="settingsBtn" aria-label="Settings">⚙</button>
+
+<div id="settingsPanel" role="dialog" aria-modal="true">
+<div class="settingsBox">
+<div class="settingLine" style="justify-content:space-between">
+<h2>FLIPBOARD SETTINGS</h2>
+<button id="closeSettings">✕ Close</button>
+</div>
+<div class="settingLine">
+<label>Page rotation
+<select id="interval">
+<option value="15">15 seconds</option>
+<option value="20">20 seconds</option>
+<option value="30">30 seconds</option>
+<option value="60">60 seconds</option>
+</select></label>
+<label><input id="animate" type="checkbox"> Classic flip animation</label>
+</div>
+<div class="section">
+<h3>Favorite bars <span id="barCount"></span></h3>
+<p class="small">Use ↑ and ↓ to change display order. Five bars per page.</p>
+<div id="barList" class="settingsList"></div>
+</div>
+<div class="section">
+<h3 id="editTitle">Add a bar</h3>
+<div class="editGrid">
+<label>Bar name<input id="barName" maxlength="80" placeholder="Bar name"></label>
+<label>Location displayed<input id="barLocation" maxlength="80" placeholder="City, state or country"></label>
+<label>Time zone<select id="barTimezone"></select></label>
+<label>Weather search city<input id="searchCity" placeholder="e.g. Key West"></label>
+<label>Latitude<input id="latitude" type="number" step="any" min="-90" max="90"></label>
+<label>Longitude<input id="longitude" type="number" step="any" min="-180" max="180"></label>
+</div>
+<div class="settingLine" style="margin-top:9px">
+<button id="lookupCity">Find city coordinates</button>
+<button id="saveBar">Save bar</button>
+<button id="cancelEdit">Clear form</button>
+</div>
+<p class="small">City lookup fills coordinates and time zone. Check the result before saving.</p>
+</div>
+<div class="section">
+<h3>Backup &amp; restore</h3>
+<div class="settingLine">
+<button id="exportSettings">Export JSON backup</button>
+<button id="importSettings">Import JSON backup</button>
+<input id="importFile" type="file" accept=".json,application/json" style="display:none">
+<button id="resetSettings">Restore original 15 bars</button>
+</div>
+<p class="small">Settings are saved on this tablet. Export a backup before clearing browser data or changing devices.</p>
+</div>
+<p id="message" role="status"></p>
+</div>
+</div>
+
 <script>
 const bars=[
 ['SLOPPY JOE’S','KEY WEST, FL','America/New_York',24.5551,-81.7800],
@@ -59,40 +136,75 @@ const bars=[
 ['CAPTAIN’S QUARTERS','SAN DIEGO, CA','America/Los_Angeles',32.7989,-117.2400],
 ['RICK’S CAFE','NEGRIL, JA','America/Jamaica',18.2684,-78.3666]
 ];
-const items=bars.map(b=>({b,temp:null,condition:'WAITING',icon:'·'}));
-const specs=[22,17,5,16,1],cols=5,perPage=5,count=Math.ceil(items.length/perPage);
-let page=0,timers=[],lastMinute='';
+const storageKey='favorite-bars-flipboard-v8-settings';
+const defaults=bars.map(b=>b.slice());
+let config={bars:defaults.map(b=>b.slice()),interval:20,animate:true};
+function validZone(z){
+try{new Intl.DateTimeFormat('en',{timeZone:z});return true}
+catch(e){return false}
+}
+function validBar(b){
+return Array.isArray(b)&&b.length===5&&
+typeof b[0]==='string'&&typeof b[1]==='string'&&
+typeof b[2]==='string'&&b[0].length<=80&&b[1].length<=80&&
+Number.isFinite(Number(b[3]))&&Number.isFinite(Number(b[4]))&&
+Math.abs(Number(b[3]))<=90&&Math.abs(Number(b[4]))<=180&&validZone(b[2])
+}
+try{
+const saved=JSON.parse(localStorage.getItem(storageKey)||'null');
+if(saved&&Array.isArray(saved.bars)&&saved.bars.length&&saved.bars.length<=150){
+const valid=saved.bars.filter(validBar);
+if(valid.length)config.bars=valid.map(b=>b.slice());
+config.interval=[15,20,30,60].includes(Number(saved.interval))?Number(saved.interval):20;
+config.animate=saved.animate!==false;
+}
+}catch(e){}
+function message(t){document.getElementById('message').textContent=t}
+function persist(){
+try{localStorage.setItem(storageKey,JSON.stringify(config));message('Saved on this tablet.')}
+catch(e){message('Unable to save locally. Export a backup.')}
+}
+let items=config.bars.map(b=>({b,temp:null,condition:'WAITING',icon:'·'}));
+const specs=[22,17,5,16,1],cols=5,perPage=5;
+let page=0,rotationTimer,lastMinute=-1;
 const root=document.getElementById('rows'),board=document.getElementById('board');
+function pageCount(){return Math.max(1,Math.ceil(items.length/perPage))}
 function clock(tz){
-return new Intl.DateTimeFormat('en-GB',{timeZone:tz,hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date())
+return new Intl.DateTimeFormat('en-GB',{
+timeZone:tz,hour:'2-digit',minute:'2-digit',hourCycle:'h23'
+}).format(new Date())
 }
 function make(){
 for(let r=0;r<perPage;r++){
 const row=document.createElement('div');row.className='grid row';
 for(let c=0;c<cols;c++){
-const field=document.createElement('div');field.className='field'+(c===4?' icon':'');
+const field=document.createElement('div');
+field.className='field'+(c===4?' icon':'');
 for(let n=0;n<specs[c];n++){
 const tile=document.createElement('div');tile.className='tile';
-const glyph=document.createElement('span');glyph.className='glyph';glyph.textContent=' ';
-tile.append(glyph);field.append(tile)
+const glyph=document.createElement('span');glyph.className='glyph';
+glyph.textContent=' ';tile.append(glyph);field.append(tile);
 }
-row.append(field)
+row.append(field);
 }
-root.append(row)
+root.append(row);
 }
 }
 function fields(i){
-const x=items[page*perPage+i];if(!x)return ['','','','',''];
-return [x.b[0],x.b[1],clock(x.b[2]),x.temp===null?x.condition:`${x.temp}°F ${x.condition}`,x.icon]
+const x=items[page*perPage+i];
+if(!x)return ['','','','',''];
+return [
+x.b[0],x.b[1],clock(x.b[2]),
+x.temp===null?x.condition:`${x.temp}°F ${x.condition}`,x.icon
+];
 }
 function fit(){
 board.style.transform='scale(1)';
 const scale=Math.min((innerWidth-10)/board.offsetWidth,(innerHeight-10)/board.offsetHeight);
-board.style.transform=`scale(${Math.min(1,scale)})`
+board.style.transform=`scale(${Math.min(1,scale)})`;
 }
 function cancel(){
-timers.forEach(clearTimeout);timers=[];
-document.querySelectorAll('.field.flip').forEach(t=>t.classList.remove('flip'))
+document.querySelectorAll('.field.flip').forEach(t=>t.classList.remove('flip'));
 }
 function render(animated=false,full=false){
 for(let r=0;r<perPage;r++){
@@ -109,13 +221,13 @@ if(animated&&(full||changed)){
 field.classList.remove('flip');
 field.style.setProperty('--delay',`${r*130+c*65}ms`);
 void field.offsetWidth;
-field.classList.add('flip')
+field.classList.add('flip');
 }
 }
 }
 }
 function next(){
-cancel();page=(page+1)%count;render(true,true)
+cancel();page=(page+1)%pageCount();render(config.animate,true);
 }
 function conditions(code){
 if(code===0)return ['CLEAR','☀'];
@@ -125,38 +237,219 @@ if(code<=67)return ['RAIN','☂'];
 if(code<=77)return ['SNOW','❄'];
 if(code<=82)return ['SHOWERS','☂'];
 if(code<=86)return ['SNOW','❄'];
-return ['STORMS','⚡']
+return ['STORMS','⚡'];
 }
 async function updateWeather(){
 const group=new Map();
 items.forEach((x,i)=>{
 const k=x.b[3]+','+x.b[4];
 if(!group.has(k))group.set(k,[]);
-group.get(k).push(i)
+group.get(k).push(i);
 });
-await Promise.all([...group].map(async ([k,ids])=>{
+await Promise.all([...group].map(async([k,ids])=>{
 try{
 const [lat,lon]=k.split(',');
-const res=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&temperature_unit=fahrenheit&timezone=auto`);
+const url=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&temperature_unit=fahrenheit&timezone=auto`;
+const res=await fetch(url);
 if(!res.ok)throw Error('weather');
 const j=await res.json();
 const [condition,icon]=conditions(j.current.weather_code);
-ids.forEach(i=>Object.assign(items[i],{temp:Math.round(j.current.temperature_2m),condition,icon}))
+ids.forEach(i=>Object.assign(items[i],{
+temp:Math.round(j.current.temperature_2m),condition,icon
+}));
 }catch(e){
-ids.forEach(i=>Object.assign(items[i],{temp:null,condition:'UNAVAILABLE',icon:'–'}))
+ids.forEach(i=>Object.assign(items[i],{
+temp:null,condition:'UNAVAILABLE',icon:'–'
+}));
 }
 }));
-render(false,false)
+render(false,false);
 }
 make();fit();render(false,true);updateWeather();
 window.addEventListener('resize',fit);
 document.getElementById('tap').addEventListener('click',next);
-setInterval(next,20000);
+function restartRotation(){
+clearInterval(rotationTimer);
+rotationTimer=setInterval(()=>{
+if(!document.getElementById('settingsPanel').classList.contains('open'))next();
+},config.interval*1000);
+}
+restartRotation();
 setInterval(()=>{
 const now=Math.floor(Date.now()/60000);
 if(now!==lastMinute){lastMinute=now;render(false,false)}
 },5000);
 setInterval(updateWeather,15*60000);
+
+const panel=document.getElementById('settingsPanel');
+const interval=document.getElementById('interval');
+const animate=document.getElementById('animate');
+const tzSelect=document.getElementById('barTimezone');
+const zones=[
+'America/Los_Angeles','America/Denver','America/Chicago',
+'America/New_York','Pacific/Honolulu','America/Jamaica',
+'Europe/London','Europe/Paris','Europe/Berlin','Europe/Rome',
+'Europe/Madrid','Asia/Tokyo','Asia/Singapore','Australia/Sydney',
+'Pacific/Auckland','America/Toronto','America/Vancouver',
+'America/Phoenix','America/Anchorage','America/Mexico_City',
+'America/Puerto_Rico'
+];
+let editIndex=-1;
+function setZones(selected){
+tzSelect.innerHTML='';
+for(const z of [...new Set([...zones,selected].filter(Boolean))]){
+const opt=document.createElement('option');
+opt.value=z;opt.textContent=z;tzSelect.append(opt);
+}
+tzSelect.value=selected||zones[0];
+}
+function clearForm(){
+editIndex=-1;
+document.getElementById('editTitle').textContent='Add a bar';
+for(const id of ['barName','barLocation','searchCity','latitude','longitude'])
+document.getElementById(id).value='';
+setZones('America/Los_Angeles');
+}
+function openSettings(){
+interval.value=config.interval;
+animate.checked=config.animate;
+drawList();panel.classList.add('open');message('');
+}
+function closeSettings(){panel.classList.remove('open');fit()}
+document.getElementById('settingsBtn').onclick=openSettings;
+document.getElementById('closeSettings').onclick=closeSettings;
+interval.onchange=()=>{
+config.interval=Number(interval.value);persist();restartRotation();
+};
+animate.onchange=()=>{config.animate=animate.checked;persist()};
+function refreshBars(){
+items=config.bars.map(b=>({b,temp:null,condition:'WAITING',icon:'·'}));
+page=0;cancel();render(false,true);drawList();updateWeather();
+}
+function drawList(){
+const list=document.getElementById('barList');
+list.replaceChildren();
+document.getElementById('barCount').textContent=`(${config.bars.length})`;
+config.bars.forEach((b,i)=>{
+const row=document.createElement('div');row.className='barEntry';
+const name=document.createElement('span');name.className='name';
+name.textContent=`${i+1}. ${b[0]} — ${b[1]}`;
+row.append(name);
+for(const [label,fn,disabled] of [
+['↑',()=>move(i,-1),i===0],
+['↓',()=>move(i,1),i===config.bars.length-1],
+['Edit',()=>edit(i),false],
+['✕',()=>remove(i),false]
+]){
+const btn=document.createElement('button');
+btn.textContent=label;btn.disabled=disabled;btn.onclick=fn;
+row.append(btn);
+}
+list.append(row);
+});
+}
+function move(i,delta){
+const j=i+delta;
+[config.bars[i],config.bars[j]]=[config.bars[j],config.bars[i]];
+persist();refreshBars();
+}
+function edit(i){
+editIndex=i;const b=config.bars[i];
+document.getElementById('editTitle').textContent='Edit bar';
+document.getElementById('barName').value=b[0];
+document.getElementById('barLocation').value=b[1];
+setZones(b[2]);
+document.getElementById('latitude').value=b[3];
+document.getElementById('longitude').value=b[4];
+document.getElementById('searchCity').value='';
+document.getElementById('barName').focus();
+}
+function remove(i){
+if(!confirm(`Remove ${config.bars[i][0]}?`))return;
+if(config.bars.length===1){message('Keep at least one bar.');return}
+config.bars.splice(i,1);clearForm();persist();refreshBars();
+}
+document.getElementById('cancelEdit').onclick=clearForm;
+document.getElementById('saveBar').onclick=()=>{
+const lat=document.getElementById('latitude').value;
+const lon=document.getElementById('longitude').value;
+const b=[
+document.getElementById('barName').value.trim(),
+document.getElementById('barLocation').value.trim(),
+tzSelect.value,Number(lat),Number(lon)
+];
+if(!b[0]||!b[1]||!lat||!lon||!validBar(b)){
+message('Enter a name, location, valid time zone and coordinates.');
+return;
+}
+if(editIndex<0&&config.bars.length>=150){
+message('Maximum 150 bars.');return;
+}
+if(editIndex>=0)config.bars[editIndex]=b;
+else config.bars.push(b);
+clearForm();persist();refreshBars();
+};
+document.getElementById('lookupCity').onclick=async()=>{
+const city=document.getElementById('searchCity').value.trim();
+if(!city){message('Enter a city to search.');return}
+message('Searching city...');
+try{
+const r=await fetch(
+'https://geocoding-api.open-meteo.com/v1/search?name='+
+encodeURIComponent(city)+'&count=1&language=en&format=json'
+);
+if(!r.ok)throw Error();
+const j=await r.json();
+if(!j.results?.length){
+message('No city found; enter coordinates manually.');return;
+}
+const x=j.results[0];
+document.getElementById('latitude').value=x.latitude;
+document.getElementById('longitude').value=x.longitude;
+setZones(x.timezone);
+message(`Found ${x.name}, ${x.country}. Check the location.`);
+}catch(e){
+message('City lookup unavailable. Enter coordinates manually.');
+}
+};
+document.getElementById('exportSettings').onclick=()=>{
+const blob=new Blob(
+[JSON.stringify({version:1,...config},null,2)],
+{type:'application/json'}
+);
+const a=document.createElement('a');
+a.href=URL.createObjectURL(blob);
+a.download='favorite-bars-flipboard-backup.json';
+document.body.append(a);a.click();a.remove();
+setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+message('Backup downloaded.');
+};
+document.getElementById('importSettings').onclick=()=>
+document.getElementById('importFile').click();
+document.getElementById('importFile').onchange=async e=>{
+const f=e.target.files?.[0];if(!f)return;
+try{
+const j=JSON.parse(await f.text());
+if(!Array.isArray(j.bars)||!j.bars.length||j.bars.length>150||
+!j.bars.every(validBar))throw Error();
+if(!confirm('Replace current bars and preferences with this backup?'))return;
+config={
+bars:j.bars.map(b=>b.slice()),
+interval:[15,20,30,60].includes(Number(j.interval))?Number(j.interval):20,
+animate:j.animate!==false
+};
+interval.value=config.interval;animate.checked=config.animate;
+persist();clearForm();refreshBars();restartRotation();
+}catch(err){message('Invalid backup. No changes made.')}
+finally{e.target.value=''}
+};
+document.getElementById('resetSettings').onclick=()=>{
+if(!confirm('Restore the original 15 bars and default settings?'))return;
+config={bars:defaults.map(b=>b.slice()),interval:20,animate:true};
+interval.value=20;animate.checked=true;
+clearForm();persist();refreshBars();restartRotation();
+};
+setZones('America/Los_Angeles');
 </script>
 </body>
 </html>
